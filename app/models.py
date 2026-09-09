@@ -32,6 +32,10 @@ class Settings(db.Model):
     size_thumb = db.Column(db.Boolean, nullable=False, default=False)
     live_photo_size = db.Column(db.String(16), nullable=False, default="original")
     force_size = db.Column(db.Boolean, nullable=False, default=False)
+    # icloudpd's own --folder-structure syntax: a Python format string
+    # wrapping strftime directives, e.g. "{:%Y/%m/%d}", or the literal
+    # "none" for no subfolders at all.
+    folder_structure = db.Column(db.String(128), nullable=False, default="{:%Y/%m/%d}")
 
     # Filtering
     # Empty means "whole library" (icloudpd's own default when --album is

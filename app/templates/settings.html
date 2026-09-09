@@ -55,6 +55,34 @@
           </div>
         </div>
       </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Ordnerstruktur</label>
+          <select class="form-select" name="folder_structure_preset" id="folder_structure_preset">
+            {% for value, label in folder_structure_presets %}
+            <option value="{{ value }}" {% if settings.folder_structure == value and not is_custom_folder_structure %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+            <option value="custom" {% if is_custom_folder_structure %}selected{% endif %}>Benutzerdefiniert…</option>
+          </select>
+          <div class="form-text">
+            Legt fest, wie Fotos innerhalb des Zielverzeichnisses in Unterordner nach
+            Aufnahmedatum einsortiert werden.
+          </div>
+        </div>
+        <div class="col-md-6 mb-3" id="folder_structure_custom_wrap"
+             style="{% if not is_custom_folder_structure %}display:none;{% endif %}">
+          <label class="form-label">Eigenes Format</label>
+          <input type="text" class="form-control" name="folder_structure_custom" id="folder_structure_custom"
+                 value="{{ settings.folder_structure if is_custom_folder_structure else '' }}"
+                 placeholder="z.B. {:%Y-%m}">
+          <div class="form-text">
+            Python-Format mit <code>strftime</code>-Platzhaltern, z.B. <code>{:%Y/%m/%d}</code>
+            (Jahr/Monat/Tag) oder <code>{:%m-%Y}</code> (Monat-Jahr). <code>none</code> für
+            keinen Unterordner.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -198,4 +226,14 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/folder_browser.js') }}"></script>
+<script>
+(function () {
+  const select = document.getElementById("folder_structure_preset");
+  const wrap = document.getElementById("folder_structure_custom_wrap");
+  if (!select || !wrap) return;
+  select.addEventListener("change", () => {
+    wrap.style.display = select.value === "custom" ? "" : "none";
+  });
+})();
+</script>
 {% endblock %}

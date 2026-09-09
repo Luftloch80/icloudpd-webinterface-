@@ -55,6 +55,8 @@ def build_args(account, settings, mode: str) -> list[str]:
     args += ["--live-photo-size", settings.live_photo_size]
     if settings.force_size:
         args.append("--force-size")
+    if settings.folder_structure:
+        args += ["--folder-structure", settings.folder_structure]
 
     if settings.album:
         args += ["--album", settings.album]

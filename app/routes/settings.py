@@ -18,6 +18,19 @@ LIVE_PHOTO_SIZES = ["original", "medium", "thumb"]
 FILE_MATCH_POLICIES = ["name-size-dedup-with-suffix", "name-id7"]
 LOG_LEVELS = ["debug", "info", "error"]
 
+# Presets for icloudpd's --folder-structure option (a Python format string
+# wrapping strftime directives). "custom" is a UI-only sentinel handled
+# below, not a real icloudpd value.
+FOLDER_STRUCTURE_PRESETS = [
+    ("{:%Y/%m/%d}", "Jahr/Monat/Tag (Standard)"),
+    ("{:%Y/%m}", "Jahr/Monat"),
+    ("{:%m/%Y}", "Monat/Jahr"),
+    ("{:%d/%m/%Y}", "Tag/Monat/Jahr"),
+    ("{:%Y}", "Nur Jahr"),
+    ("none", "Kein Unterordner (alle Fotos in einem Ordner)"),
+]
+_FOLDER_STRUCTURE_VALUES = {value for value, _ in FOLDER_STRUCTURE_PRESETS}
+
 
 def _int_or_none(value: str):
     value = (value or "").strip()
@@ -120,6 +133,15 @@ def edit():
         settings.live_photo_size = request.form.get("live_photo_size", "original")
         settings.force_size = request.form.get("force_size") == "on"
 
+        preset = request.form.get("folder_structure_preset", "{:%Y/%m/%d}")
+        if preset == "custom":
+            custom = request.form.get("folder_structure_custom", "").strip()
+            settings.folder_structure = custom or "{:%Y/%m/%d}"
+        elif preset in _FOLDER_STRUCTURE_VALUES:
+            settings.folder_structure = preset
+        else:
+            settings.folder_structure = "{:%Y/%m/%d}"
+
         # Empty = whole library (icloudpd's own default when --album is
         # omitted). Do NOT fall back to a guessed name like "All Photos"
         # here: icloudpd looks that up as an exact album name and crashes
@@ -148,6 +170,8 @@ def edit():
         flash("Einstellungen gespeichert.", "success")
         return redirect(url_for("settings.edit"))
 
+    is_custom_folder_structure = settings.folder_structure not in _FOLDER_STRUCTURE_VALUES
+
     return render_template(
         "settings.html",
         account=account,
@@ -155,4 +179,6 @@ def edit():
         live_photo_sizes=LIVE_PHOTO_SIZES,
         file_match_policies=FILE_MATCH_POLICIES,
         log_levels=LOG_LEVELS,
+        folder_structure_presets=FOLDER_STRUCTURE_PRESETS,
+        is_custom_folder_structure=is_custom_folder_structure,
     )
