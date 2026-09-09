@@ -1,4 +1,6 @@
+import os
 import shlex
+import signal
 import subprocess
 import threading
 from datetime import datetime
@@ -116,12 +118,41 @@ def stop_job(account_id: int) -> bool:
         db.session.commit()
 
     proc: subprocess.Popen = entry["proc"]
-    proc.terminate()
-    try:
-        proc.wait(timeout=15)
-    except subprocess.TimeoutExpired:
-        proc.kill()
+    _terminate_process_group(proc)
     return True
+
+
+def _terminate_process_group(proc: subprocess.Popen, timeout: int = 15):
+    """Signals the whole process group, not just the directly spawned PID.
+
+    The installed `icloudpd` command is a thin wrapper that runs the actual
+    (compiled) worker as its own child via `subprocess.call`. Killing only
+    the wrapper leaves that worker running as an orphan, still writing to
+    the same log file - which is exactly why "Stoppen" previously appeared
+    to do nothing. `start_new_session=True` at spawn time (see start_job)
+    puts both processes in one group, so `killpg` reaches both.
+    """
+    try:
+        pgid = os.getpgid(proc.pid)
+    except ProcessLookupError:
+        return
+
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def tail_log(log_file: str, max_bytes: int = 40000) -> str:
@@ -186,6 +217,10 @@ def start_job(app, account, settings, mode: str = "once") -> RunLog:
             stdout=log_file_handle,
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL,
+            # New session/process group so stop_job() can kill the whole
+            # tree (icloudpd's wrapper + its actual worker child), not just
+            # the directly spawned wrapper process.
+            start_new_session=True,
         )
     except FileNotFoundError as exc:
         run_log.status = "failed"

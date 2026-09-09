@@ -15,6 +15,7 @@ drive across multiple HTTP requests.
 import os
 import secrets
 import select
+import signal
 import subprocess
 import threading
 import time
@@ -85,8 +86,16 @@ class AuthSession:
         }
 
     def terminate(self):
+        # icloudpd's own executable is a thin wrapper that runs the actual
+        # worker as a further child via subprocess.call; killing only the
+        # directly-spawned PID would leave that worker running as an
+        # orphan. start_new_session=True at spawn time puts both in one
+        # process group so killpg reaches both.
         if self.proc.poll() is None:
-            self.proc.terminate()
+            try:
+                os.killpg(os.getpgid(self.proc.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass
 
 
 def _cookie_dir_for(apple_id: str) -> str:
@@ -134,6 +143,7 @@ def start_login(apple_id: str, password: str, china_mainland: bool = False) -> s
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            start_new_session=True,
         )
     except FileNotFoundError as exc:
         raise LoginError(f"icloudpd nicht gefunden: {exc}") from exc

@@ -4,6 +4,10 @@ services:
     # Alternatively, once published: image: <dein-dockerhub-user>/icloudpd-webinterface:latest
     container_name: icloudpd-webinterface
     restart: unless-stopped
+    # Runs Docker's built-in tini as PID 1 so orphaned/killed grandchild
+    # processes (icloudpd's own wrapper spawns its actual worker as a
+    # child) get properly reaped instead of lingering as zombies.
+    init: true
     ports:
       - "5000:5000"
     environment:
