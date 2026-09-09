@@ -56,6 +56,7 @@ def status():
 
     running = icloudpd_runner.is_running(account.id)
     log_text = ""
+    progress = {"total": None, "processed": 0, "remaining": None, "eta_seconds": None}
     run_log = None
     if running:
         run_log = db.session.get(RunLog, running["run_log_id"])
@@ -67,13 +68,19 @@ def status():
         )
 
     if run_log:
-        log_text = icloudpd_runner.tail_log(run_log.log_file)
+        full_text = icloudpd_runner.read_full_log(run_log.log_file)
+        progress = icloudpd_runner.parse_progress(full_text, run_log.started_at)
+
+        display_level = account.settings.log_level if account.settings else "info"
+        tail_text = full_text[-40000:] if len(full_text) > 40000 else full_text
+        log_text = icloudpd_runner.filter_log_by_level(tail_text, display_level)
 
     return jsonify(
         {
             "running": bool(running),
             "status": run_log.status if run_log else None,
             "log": log_text,
+            **progress,
         }
     )
 

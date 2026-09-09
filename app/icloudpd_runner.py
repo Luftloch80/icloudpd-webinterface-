@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 import signal
 import subprocess
@@ -80,8 +81,12 @@ def build_args(account, settings, mode: str) -> list[str]:
 
     if settings.threads_num and settings.threads_num > 1:
         args += ["--threads-num", str(settings.threads_num)]
-    if settings.log_level:
-        args += ["--log-level", settings.log_level]
+    # Always capture at debug level internally, regardless of the user's
+    # display preference (settings.log_level): the "remaining photos"
+    # progress calculation needs the debug-only "already exists" skip
+    # lines, not just the info-level "Downloaded ..." lines. What the user
+    # actually sees is filtered down from this by filter_log_by_level().
+    args += ["--log-level", "debug"]
 
     if mode == "continuous" and settings.watch_interval_seconds:
         args += ["--watch-with-interval", str(settings.watch_interval_seconds)]
@@ -155,6 +160,71 @@ def _terminate_process_group(proc: subprocess.Popen, timeout: int = 15):
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             pass
+
+
+_TOTAL_RE = re.compile(r"Downloading (the first|\d+) \S+.*? to .*? \.\.\.")
+_DOWNLOADED_RE = re.compile(r"^\S+ \S+ INFO\s+Downloaded ", re.MULTILINE)
+_SKIPPED_RE = re.compile(r"already exists$", re.MULTILINE)
+
+_LEVEL_RANK = {"DEBUG": 0, "INFO": 1, "ERROR": 2}
+_LEVEL_LINE_RE = re.compile(r"^\S+ \S+ (DEBUG|INFO|ERROR)\s")
+
+
+def filter_log_by_level(text: str, min_level: str) -> str:
+    """Restricts a debug-captured log to what the user actually asked to
+    see (settings.log_level is a display preference now, not passed to
+    icloudpd - see build_args). Lines without a recognizable level prefix
+    (our own header, tracebacks) inherit the previous line's visibility."""
+    min_rank = _LEVEL_RANK.get((min_level or "").upper(), 1)
+    out_lines = []
+    keep_current = True
+    for line in text.splitlines():
+        match = _LEVEL_LINE_RE.match(line)
+        if match:
+            keep_current = _LEVEL_RANK[match.group(1)] >= min_rank
+        if keep_current:
+            out_lines.append(line)
+    return "\n".join(out_lines)
+
+
+def parse_progress(text: str, started_at: datetime) -> dict:
+    """Extracts a best-effort "N of M processed / remaining / ETA" from
+    icloudpd's own log output. `total` comes from its startup line
+    ("Downloading <N> photos and videos to ... ..."); `processed` counts
+    both actually-downloaded and already-existing (skipped) items, since
+    both count against that total. Returns total=None when the startup
+    line hasn't appeared yet (e.g. still authenticating)."""
+    total_match = _TOTAL_RE.search(text)
+    total = None
+    if total_match:
+        raw = total_match.group(1)
+        total = 1 if raw == "the first" else int(raw)
+
+    processed = len(_DOWNLOADED_RE.findall(text)) + len(_SKIPPED_RE.findall(text))
+    remaining = max(total - processed, 0) if total is not None else None
+
+    eta_seconds = None
+    if remaining and processed > 0:
+        elapsed = (datetime.utcnow() - started_at).total_seconds()
+        if elapsed > 0:
+            eta_seconds = int((elapsed / processed) * remaining)
+
+    return {
+        "total": total,
+        "processed": processed,
+        "remaining": remaining,
+        "eta_seconds": eta_seconds,
+    }
+
+
+def read_full_log(log_file: str) -> str:
+    """Reads the whole log, untruncated - needed for parse_progress()
+    since the startup line with the total count is near the beginning,
+    which tail_log()'s truncation would otherwise lose on long runs."""
+    path = Path(log_file)
+    if not path.exists():
+        return ""
+    return path.read_bytes().decode("utf-8", errors="replace")
 
 
 def tail_log(log_file: str, max_bytes: int = 40000) -> str:
