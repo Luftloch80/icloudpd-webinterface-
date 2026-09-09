@@ -15,4 +15,10 @@ services:
       # - FERNET_KEY=
     volumes:
       - ./data/config:/data/config
-      - ./data/photos:/data/photos
+      # Gesamtes D:-Laufwerk eingebunden. Achtung: der Container hat damit
+      # vollen Lese-/Schreibzugriff auf das komplette Laufwerk – bei
+      # aktivierten Optionen wie "Auto-Delete" oder "Delete after download"
+      # in den Einstellungen kann das theoretisch auch außerhalb des
+      # gewählten Zielordners wirken. Im Zweifel lieber einen konkreten
+      # Unterordner mounten, z.B. "D:\iCloud-Fotos:/data/drive_d".
+      - D:\:/data/drive_d

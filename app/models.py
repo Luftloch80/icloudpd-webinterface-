@@ -26,7 +26,7 @@ class Settings(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
 
     # Download
-    directory = db.Column(db.String(512), nullable=False, default="/data/photos")
+    directory = db.Column(db.String(512), nullable=False, default="/data/drive_d")
     size_original = db.Column(db.Boolean, nullable=False, default=True)
     size_medium = db.Column(db.Boolean, nullable=False, default=False)
     size_thumb = db.Column(db.Boolean, nullable=False, default=False)

@@ -60,10 +60,24 @@ Alle persistenten Daten liegen unter `/data` im Container:
 | `/data/config`          | SQLite-Datenbank, Verschlüsselungs-/Session-Keys   |
 | `/data/config/cookies`  | iCloud-Session-/Cookie-Dateien (pro Apple-ID)      |
 | `/data/config/logs`     | Log-Dateien aller Sync-Läufe                       |
-| `/data/photos`          | Standard-Zielverzeichnis für heruntergeladene Fotos |
+| `/data/drive_d`         | Gesamtes `D:`-Laufwerk (Standard-Zielverzeichnis)  |
 
-Im mitgelieferten `docker-compose.yml` werden `./data/config` und
-`./data/photos` auf dem Host gemountet.
+Im mitgelieferten `docker-compose.yml` wird `./data/config` (lokaler Ordner
+neben dem Repo) sowie das komplette `D:\`-Laufwerk (`D:\` → `/data/drive_d`)
+auf dem Host gemountet. Das Zielverzeichnis in den Einstellungen kann per
+integriertem Ordner-Browser innerhalb von `/data` (also auch innerhalb von
+`/data/drive_d`, sprich überall auf `D:`) ausgewählt werden.
+
+**Achtung:** Da hier das komplette Laufwerk eingebunden ist, hat der
+Container vollen Lese-/Schreibzugriff auf alles auf `D:`. Bei aktivierten
+Optionen wie „Auto-Delete“ oder „Delete after download“ in den
+Einstellungen betrifft das ausschließlich das gewählte Zielverzeichnis
+selbst – trotzdem empfiehlt es sich, sicherheitshalber einen dedizierten
+Unterordner (z. B. `D:\iCloud-Fotos`) als Ziel zu wählen statt das
+Laufwerk direkt als Ziel zu nutzen. Wer stattdessen nur einen bestimmten
+Ordner statt des ganzen Laufwerks mounten möchte, ersetzt in der
+`docker-compose.yml` die Zeile `- D:\:/data/drive_d` durch z. B.
+`- D:\iCloud-Fotos:/data/photos`.
 
 ## Sicherheit
 
