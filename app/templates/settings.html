@@ -50,7 +50,13 @@
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Album</label>
-          <input type="text" class="form-control" name="album" value="{{ settings.album }}">
+          <input type="text" class="form-control" name="album" value="{{ settings.album }}"
+                 placeholder="leer = gesamte Mediathek">
+          <div class="form-text">
+            Leer lassen für die gesamte Mediathek. Ein hier eingetragener Name muss exakt
+            einem Album entsprechen (siehe „Verfügbare Alben“ in
+            <a href="{{ url_for('jobs.help_text') }}">icloudpd --help</a>), sonst bricht der Lauf ab.
+          </div>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Datei-Abgleich-Policy</label>

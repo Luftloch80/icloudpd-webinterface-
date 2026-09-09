@@ -43,7 +43,11 @@ def edit():
         settings.live_photo_size = request.form.get("live_photo_size", "original")
         settings.force_size = request.form.get("force_size") == "on"
 
-        settings.album = request.form.get("album", "All Photos").strip() or "All Photos"
+        # Empty = whole library (icloudpd's own default when --album is
+        # omitted). Do NOT fall back to a guessed name like "All Photos"
+        # here: icloudpd looks that up as an exact album name and crashes
+        # with a KeyError if no such album exists.
+        settings.album = request.form.get("album", "").strip()
         settings.file_match_policy = request.form.get(
             "file_match_policy", "name-size-dedup-with-suffix"
         )

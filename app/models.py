@@ -34,7 +34,11 @@ class Settings(db.Model):
     force_size = db.Column(db.Boolean, nullable=False, default=False)
 
     # Filtering
-    album = db.Column(db.String(255), nullable=False, default="All Photos")
+    # Empty means "whole library" (icloudpd's own default when --album is
+    # omitted). A literal value here is looked up as an exact album name by
+    # icloudpd and crashes with a KeyError if no such album exists, so this
+    # must never default to a guessed name like "All Photos".
+    album = db.Column(db.String(255), nullable=False, default="")
     file_match_policy = db.Column(
         db.String(64), nullable=False, default="name-size-dedup-with-suffix"
     )
