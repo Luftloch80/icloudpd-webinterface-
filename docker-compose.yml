@@ -1,0 +1,18 @@
+services:
+  icloudpd-webinterface:
+    build: .
+    # Alternatively, once published: image: <dein-dockerhub-user>/icloudpd-webinterface:latest
+    container_name: icloudpd-webinterface
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - TZ=Europe/Berlin
+      - APP_USERNAME=admin
+      - APP_PASSWORD=${APP_PASSWORD:?Bitte APP_PASSWORD in der .env Datei setzen}
+      # Optional: fester Schlüssel für die Passwort-Verschlüsselung, sonst
+      # wird beim ersten Start automatisch einer erzeugt und persistiert.
+      # - FERNET_KEY=
+    volumes:
+      - ./data/config:/data/config
+      - ./data/photos:/data/photos

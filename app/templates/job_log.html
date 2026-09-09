@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Log{% endblock %}
+{% block content %}
+<h4 class="mb-3">
+  Log – {{ run_log.started_at.strftime('%d.%m.%Y %H:%M:%S') }}
+  <span class="badge bg-{{ 'success' if run_log.status == 'success' else ('danger' if run_log.status == 'failed' else ('secondary' if run_log.status == 'stopped' else 'warning')) }}">
+    {{ run_log.status }}
+  </span>
+</h4>
+<pre class="log-box">{{ log_text }}</pre>
+<a href="{{ url_for('jobs.history') }}" class="btn btn-secondary">Zurück</a>
+{% endblock %}

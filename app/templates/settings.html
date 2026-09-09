@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen{% endblock %}
+{% block content %}
+<h4 class="mb-3">Einstellungen</h4>
+<form method="post">
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Download</h5>
+      <div class="mb-3">
+        <label class="form-label">Zielverzeichnis</label>
+        <input type="text" class="form-control" name="directory" value="{{ settings.directory }}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label d-block">Bildgrößen</label>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" name="size_original" id="size_original" {% if settings.size_original %}checked{% endif %}>
+          <label class="form-check-label" for="size_original">Original</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" name="size_medium" id="size_medium" {% if settings.size_medium %}checked{% endif %}>
+          <label class="form-check-label" for="size_medium">Medium</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" name="size_thumb" id="size_thumb" {% if settings.size_thumb %}checked{% endif %}>
+          <label class="form-check-label" for="size_thumb">Thumbnail</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Live-Photo-Größe</label>
+          <select class="form-select" name="live_photo_size">
+            {% for s in live_photo_sizes %}
+            <option value="{{ s }}" {% if settings.live_photo_size == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6 mb-3 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="force_size" id="force_size" {% if settings.force_size %}checked{% endif %}>
+            <label class="form-check-label" for="force_size">Größe erzwingen (force-size)</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Filter</h5>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Album</label>
+          <input type="text" class="form-control" name="album" value="{{ settings.album }}">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Datei-Abgleich-Policy</label>
+          <select class="form-select" name="file_match_policy">
+            {% for p in file_match_policies %}
+            <option value="{{ p }}" {% if settings.file_match_policy == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="skip_videos" id="skip_videos" {% if settings.skip_videos %}checked{% endif %}>
+            <label class="form-check-label" for="skip_videos">Videos überspringen</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="skip_live_photos" id="skip_live_photos" {% if settings.skip_live_photos %}checked{% endif %}>
+            <label class="form-check-label" for="skip_live_photos">Live Photos überspringen</label>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Nur die letzten N</label>
+          <input type="number" min="0" class="form-control" name="recent" value="{{ settings.recent if settings.recent is not none else '' }}">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Bis N bekannte gefunden (until-found)</label>
+          <input type="number" min="0" class="form-control" name="until_found" value="{{ settings.until_found if settings.until_found is not none else '' }}">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Verhalten</h5>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="auto_delete" id="auto_delete" {% if settings.auto_delete %}checked{% endif %}>
+        <label class="form-check-label" for="auto_delete">
+          Auto-Delete (lokale Dateien löschen, die in iCloud im Papierkorb liegen)
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="dry_run" id="dry_run" {% if settings.dry_run %}checked{% endif %}>
+        <label class="form-check-label" for="dry_run">Testlauf (dry-run, es wird nichts heruntergeladen)</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="only_print_filenames" id="only_print_filenames" {% if settings.only_print_filenames %}checked{% endif %}>
+        <label class="form-check-label" for="only_print_filenames">Nur Dateinamen ausgeben</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Ausführung</h5>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Intervall im Dauerbetrieb (Sekunden)</label>
+          <input type="number" min="0" class="form-control" name="watch_interval_seconds"
+                 value="{{ settings.watch_interval_seconds if settings.watch_interval_seconds is not none else '' }}">
+          <div class="form-text">Nur relevant für „Dauerhaft überwachen“.</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Parallele Threads</label>
+          <input type="number" min="1" class="form-control" name="threads_num" value="{{ settings.threads_num }}">
+          <div class="form-text">In aktuellen icloudpd-Versionen deprecated (wirkt derzeit nicht, immer 1).</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Log-Level</label>
+          <select class="form-select" name="log_level">
+            {% for l in log_levels %}
+            <option value="{{ l }}" {% if settings.log_level == l %}selected{% endif %}>{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Erweitert</h5>
+      <label class="form-label">Zusätzliche icloudpd-Argumente</label>
+      <textarea class="form-control" name="extra_args" rows="3"
+                placeholder="z.B. --set-exif-datetime --xmp-sidecar --keep-icloud-recent-days 30">{{ settings.extra_args }}</textarea>
+      <div class="form-text">
+        Für Optionen, die hier nicht als Feld vorhanden sind. Vollständige Liste unter
+        <a href="{{ url_for('jobs.help_text') }}">icloudpd --help</a>.
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Speichern</button>
+</form>
+{% endblock %}

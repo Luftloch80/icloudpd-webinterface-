@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Verlauf{% endblock %}
+{% block content %}
+<h4 class="mb-3">Lauf-Verlauf</h4>
+<table class="table table-striped">
+  <thead>
+    <tr><th>Start</th><th>Ende</th><th>Modus</th><th>Status</th><th>Exit-Code</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for run in runs %}
+    <tr>
+      <td>{{ run.started_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+      <td>{{ run.finished_at.strftime('%d.%m.%Y %H:%M:%S') if run.finished_at else '-' }}</td>
+      <td>{{ run.mode }}</td>
+      <td>
+        <span class="badge bg-{{ 'success' if run.status == 'success' else ('danger' if run.status == 'failed' else ('secondary' if run.status == 'stopped' else 'warning')) }}">
+          {{ run.status }}
+        </span>
+      </td>
+      <td>{{ run.exit_code if run.exit_code is not none else '-' }}</td>
+      <td><a href="{{ url_for('jobs.view_log', run_id=run.id) }}">Log</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="text-muted">Noch keine Läufe.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

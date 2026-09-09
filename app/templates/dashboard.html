@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Apple-ID</h5>
+        {% if account and account.authenticated %}
+          <p class="mb-1"><strong>{{ account.apple_id }}</strong></p>
+          <p class="text-muted small mb-2">
+            Domain: {{ account.domain }} ·
+            Letzte Anmeldung: {{ account.last_login_at.strftime('%d.%m.%Y %H:%M') if account.last_login_at else '-' }}
+          </p>
+          <span class="badge bg-success mb-3">Verbunden</span>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('apple_auth.login') }}" class="btn btn-sm btn-outline-secondary">Erneut anmelden</a>
+            <form method="post" action="{{ url_for('apple_auth.disconnect') }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Trennen</button>
+            </form>
+          </div>
+        {% else %}
+          <p class="text-muted">Es ist noch keine Apple-ID verbunden.</p>
+          <a href="{{ url_for('apple_auth.login') }}" class="btn btn-primary">Apple-ID verbinden</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Synchronisation</h5>
+        {% if not account or not account.authenticated %}
+          <p class="text-muted">Verbinde zuerst deine Apple-ID.</p>
+        {% else %}
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span>Status:</span>
+            <span id="job-status-badge" class="badge bg-secondary">wird geladen...</span>
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <form method="post" action="{{ url_for('jobs.start', mode='once') }}">
+              <button type="submit" class="btn btn-primary" {% if running %}disabled{% endif %}>
+                Einmalig synchronisieren
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('jobs.start', mode='continuous') }}">
+              <button type="submit" class="btn btn-outline-primary" {% if running %}disabled{% endif %}>
+                Dauerhaft überwachen (Intervall)
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('jobs.stop') }}">
+              <button type="submit" class="btn btn-outline-danger" {% if not running %}disabled{% endif %}>
+                Stoppen
+              </button>
+            </form>
+          </div>
+          <p class="small text-muted">
+            Zielverzeichnis: <code>{{ account.settings.directory }}</code> ·
+            <a href="{{ url_for('settings.edit') }}">Einstellungen anpassen</a>
+          </p>
+          <h6 class="mt-4">Live-Log</h6>
+          <pre id="job-log" class="log-box">wird geladen...</pre>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if recent_runs %}
+<div class="card mt-4">
+  <div class="card-body">
+    <h5 class="card-title">Letzte Läufe</h5>
+    <table class="table table-sm">
+      <thead><tr><th>Start</th><th>Modus</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr>
+          <td>{{ run.started_at.strftime('%d.%m.%Y %H:%M') }}</td>
+          <td>{{ run.mode }}</td>
+          <td>
+            <span class="badge bg-{{ 'success' if run.status == 'success' else ('danger' if run.status == 'failed' else ('secondary' if run.status == 'stopped' else 'warning')) }}">
+              {{ run.status }}
+            </span>
+          </td>
+          <td><a href="{{ url_for('jobs.view_log', run_id=run.id) }}">Log ansehen</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if account and account.authenticated %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endif %}
+{% endblock %}
