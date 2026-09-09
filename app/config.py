@@ -30,6 +30,12 @@ class Config:
 
     ICLOUDPD_BIN = os.environ.get("ICLOUDPD_BIN", "icloudpd")
 
+    # Dropbox App credentials (identify this app to Dropbox, shared across
+    # whoever uses this deployment - not a per-user secret). Create a
+    # Scoped App at https://www.dropbox.com/developers/apps to get these.
+    DROPBOX_APP_KEY = os.environ.get("DROPBOX_APP_KEY")
+    DROPBOX_APP_SECRET = os.environ.get("DROPBOX_APP_SECRET")
+
     @classmethod
     def ensure_dirs(cls):
         for d in (cls.DATA_DIR, cls.CONFIG_DIR, cls.DOWNLOAD_DIR, cls.COOKIE_DIR, cls.LOG_DIR):

@@ -17,6 +17,9 @@ services:
       # Optional: fester Schlüssel für die Passwort-Verschlüsselung, sonst
       # wird beim ersten Start automatisch einer erzeugt und persistiert.
       # - FERNET_KEY=
+      # Optional: fuer den Dropbox-Upload, siehe README.
+      - DROPBOX_APP_KEY=${DROPBOX_APP_KEY:-}
+      - DROPBOX_APP_SECRET=${DROPBOX_APP_SECRET:-}
     volumes:
       - ./data/config:/data/config
       # Gesamtes D:-Laufwerk eingebunden. Achtung: der Container hat damit

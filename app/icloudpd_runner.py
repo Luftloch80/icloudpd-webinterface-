@@ -247,8 +247,24 @@ def _watch_process(app, account_id: int, run_log_id: int, proc: subprocess.Popen
             if run_log.status == "running":
                 run_log.status = "success" if exit_code == 0 else "failed"
             db.session.commit()
+            _maybe_trigger_dropbox_upload(app, account_id, run_log)
     with _lock:
         _running.pop(account_id, None)
+
+
+def _maybe_trigger_dropbox_upload(app, account_id: int, run_log: RunLog):
+    if run_log.status != "success":
+        return
+
+    from app import dropbox_uploader
+    from app.models import Account
+
+    account = db.session.get(Account, account_id)
+    settings = account.settings if account else None
+    if not settings or not settings.dropbox_enabled:
+        return
+
+    dropbox_uploader.start_upload(app, settings.directory, settings.dropbox_folder)
 
 
 def start_job(app, account, settings, mode: str = "once") -> RunLog:

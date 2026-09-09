@@ -7,3 +7,4 @@ cryptography>=42.0.0
 gunicorn==22.0.0
 tzdata>=2024.1
 icloudpd>=1.20
+dropbox>=12.0

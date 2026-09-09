@@ -21,6 +21,8 @@ Raspberry Pi (funktioniert genauso auf jedem anderen Linux-Host).
   als verlässliche Referenz für alle verfügbaren Optionen
 - **Job-Steuerung**: einmalig synchronisieren oder dauerhaft im Intervall
   überwachen, inkl. Live-Log, Start/Stopp und Lauf-Verlauf
+- **Dropbox-Upload**: heruntergeladene Fotos optional automatisch nach jedem
+  erfolgreichen Sync zu Dropbox hochladen (nur neue/geänderte Dateien)
 
 ## Schnellstart (Docker Compose)
 
@@ -95,15 +97,39 @@ Ordner statt des ganzen Laufwerks mounten möchte, ersetzt in der
 
 ## Umgebungsvariablen
 
-| Variable         | Beschreibung                                                        | Default            |
-|-------------------|----------------------------------------------------------------------|---------------------|
-| `APP_USERNAME`    | Benutzername fürs Webinterface                                       | `admin`             |
-| `APP_PASSWORD`    | Passwort fürs Webinterface (dringend setzen!)                        | auto-generiert      |
-| `FERNET_KEY`      | Fester Schlüssel zur Passwort-Verschlüsselung                        | auto-generiert      |
-| `SECRET_KEY`      | Flask-Session-Secret                                                 | auto-generiert      |
-| `DATA_DIR`        | Basisverzeichnis für alle persistenten Daten                         | `/data`             |
-| `ICLOUDPD_BIN`    | Pfad/Name der icloudpd-Binary                                        | `icloudpd`          |
-| `TZ`              | Zeitzone für Zeitstempel in Logs/Verlauf                             | Container-Default   |
+| Variable              | Beschreibung                                                        | Default            |
+|------------------------|----------------------------------------------------------------------|---------------------|
+| `APP_USERNAME`         | Benutzername fürs Webinterface                                       | `admin`             |
+| `APP_PASSWORD`         | Passwort fürs Webinterface (dringend setzen!)                        | auto-generiert      |
+| `FERNET_KEY`           | Fester Schlüssel zur Passwort-Verschlüsselung                        | auto-generiert      |
+| `SECRET_KEY`           | Flask-Session-Secret                                                 | auto-generiert      |
+| `DATA_DIR`             | Basisverzeichnis für alle persistenten Daten                         | `/data`             |
+| `ICLOUDPD_BIN`         | Pfad/Name der icloudpd-Binary                                        | `icloudpd`          |
+| `TZ`                   | Zeitzone für Zeitstempel in Logs/Verlauf                             | Container-Default   |
+| `DROPBOX_APP_KEY`      | App Key der eigenen Dropbox-App (siehe unten)                        | – (Feature deaktiviert ohne diese) |
+| `DROPBOX_APP_SECRET`   | App Secret der eigenen Dropbox-App                                   | –                   |
+
+## Dropbox-Upload einrichten
+
+1. Auf https://www.dropbox.com/developers/apps eine neue App anlegen:
+   - **Scoped access**
+   - Zugriff auf **App folder** (empfohlen, sieht nur den eigenen Unterordner)
+     oder **Full Dropbox**
+2. Im Reiter „Permissions“ der neuen App die Berechtigungen
+   `files.content.write` und `files.content.read` aktivieren und speichern.
+3. Im Reiter „Settings“ **App key** und **App secret** kopieren, in die
+   `.env` als `DROPBOX_APP_KEY` / `DROPBOX_APP_SECRET` eintragen, dann
+   `docker compose up -d --build`.
+4. Im Webinterface unter „Dropbox“ auf **Verbinden** klicken. Es erscheint
+   ein Link zu Dropbox; dort den Zugriff bestätigen, den angezeigten Code
+   kopieren und im Webinterface einfügen. Eine öffentlich erreichbare
+   Adresse für den Pi ist dafür **nicht** nötig.
+5. Zielordner in Dropbox festlegen und „Nach jedem erfolgreichen Sync
+   automatisch hochladen“ aktivieren, oder jederzeit manuell über
+   „Jetzt zu Dropbox hochladen“ anstoßen.
+
+Bereits hochgeladene, unveränderte Dateien werden bei späteren Läufen
+übersprungen (Abgleich über Dateigröße und Änderungsdatum).
 
 ## Entwicklung / lokal ohne Docker
 

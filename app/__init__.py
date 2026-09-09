@@ -27,13 +27,14 @@ def create_app(config_class=Config) -> Flask:
     login_manager.init_app(app)
     login_manager.user_loader(load_user)
 
-    from app.routes import app_auth, apple_auth, dashboard, jobs, settings
+    from app.routes import app_auth, apple_auth, dashboard, dropbox_routes, jobs, settings
 
     app.register_blueprint(app_auth.bp)
     app.register_blueprint(apple_auth.bp)
     app.register_blueprint(dashboard.bp)
     app.register_blueprint(settings.bp)
     app.register_blueprint(jobs.bp)
+    app.register_blueprint(dropbox_routes.bp)
 
     with app.app_context():
         db.create_all()

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Dropbox{% endblock %}
+{% block content %}
+<h4 class="mb-3">Dropbox</h4>
+
+{% if not app_configured %}
+<div class="alert alert-warning">
+  <code>DROPBOX_APP_KEY</code> / <code>DROPBOX_APP_SECRET</code> sind nicht gesetzt. Siehe README,
+  wie eine eigene Dropbox-App dafür angelegt wird.
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Verbindung</h5>
+    {% if connection %}
+      <p class="mb-2">
+        Verbunden als <strong>{{ connection.account_email or 'Dropbox-Konto' }}</strong>
+        <span class="badge bg-success">Verbunden</span>
+      </p>
+      <form method="post" action="{{ url_for('dropbox.disconnect') }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger">Trennen</button>
+      </form>
+    {% else %}
+      <p class="text-muted">Kein Dropbox-Konto verbunden.</p>
+      <a href="{{ url_for('dropbox.connect') }}" class="btn btn-primary {% if not app_configured %}disabled{% endif %}">
+        Dropbox verbinden
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if account and account.settings %}
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Upload-Einstellungen</h5>
+    <form method="post" action="{{ url_for('dropbox.save_settings') }}">
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="dropbox_enabled" id="dropbox_enabled"
+               {% if account.settings.dropbox_enabled %}checked{% endif %}>
+        <label class="form-check-label" for="dropbox_enabled">
+          Nach jedem erfolgreichen Sync automatisch zu Dropbox hochladen
+        </label>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Zielordner in Dropbox</label>
+        <input type="text" class="form-control" name="dropbox_folder" value="{{ account.settings.dropbox_folder }}">
+        <div class="form-text">
+          Die Ordnerstruktur aus <code>{{ account.settings.directory }}</code> wird darunter gespiegelt.
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Speichern</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Manueller Upload</h5>
+    <form method="post" action="{{ url_for('dropbox.upload_now') }}" class="mb-3">
+      <button type="submit" class="btn btn-outline-primary" data-connected="{{ 'true' if connection else 'false' }}"
+              {% if not connection or uploading %}disabled{% endif %}>
+        Jetzt zu Dropbox hochladen
+      </button>
+    </form>
+
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span>Status:</span>
+      <span id="dropbox-status-badge" class="badge bg-secondary">–</span>
+    </div>
+    <pre id="dropbox-log" class="log-box">noch kein Upload durchgeführt</pre>
+  </div>
+</div>
+{% else %}
+<p class="text-muted">Verbinde zuerst eine Apple-ID auf dem Dashboard, um ein Zielverzeichnis zu haben.</p>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if account and account.settings %}
+<script src="{{ url_for('static', filename='js/dropbox.js') }}"></script>
+{% endif %}
+{% endblock %}

@@ -64,6 +64,10 @@ class Settings(db.Model):
     # Escape hatch for any icloudpd flag not exposed as a dedicated field.
     extra_args = db.Column(db.Text, nullable=False, default="")
 
+    # Dropbox upload
+    dropbox_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    dropbox_folder = db.Column(db.String(512), nullable=False, default="/iCloud-Fotos")
+
     account = db.relationship("Account", back_populates="settings")
 
     def size_list(self):
@@ -89,3 +93,24 @@ class RunLog(db.Model):
     log_file = db.Column(db.String(512), nullable=False)
     started_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     finished_at = db.Column(db.DateTime, nullable=True)
+
+
+class DropboxConnection(db.Model):
+    """Single-row table: the Dropbox account we upload to, if connected."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    encrypted_refresh_token = db.Column(db.LargeBinary, nullable=False)
+    account_email = db.Column(db.String(255), nullable=True)
+    connected_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+class UploadedFile(db.Model):
+    """Tracks what's already been uploaded to Dropbox, keyed by its path
+    relative to the icloudpd download directory, so repeated upload passes
+    only transfer files that are new or have actually changed."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    relative_path = db.Column(db.String(1024), nullable=False, unique=True)
+    size = db.Column(db.Integer, nullable=False)
+    mtime = db.Column(db.Float, nullable=False)
+    uploaded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

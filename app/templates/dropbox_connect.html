@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Dropbox verbinden{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title mb-3">Dropbox verbinden</h4>
+
+        {% if authorize_url %}
+          <p>
+            1. Öffne diesen Link und bestätige den Zugriff:<br>
+            <a href="{{ authorize_url }}" target="_blank" rel="noopener">{{ authorize_url }}</a>
+          </p>
+          <p>2. Dropbox zeigt dir danach einen Code. Füge ihn hier ein:</p>
+          <form method="post" action="{{ url_for('dropbox.connect_finish') }}">
+            <div class="mb-3">
+              <input type="text" class="form-control" name="code" placeholder="Code von Dropbox" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Bestätigen</button>
+          </form>
+        {% else %}
+          <p class="text-muted">
+            Startet die Verbindung zu deinem Dropbox-Konto. Du bestätigst den Zugriff auf einer
+            Dropbox-Seite und fügst anschließend einen Code hier ein — es ist keine öffentlich
+            erreichbare Adresse für dieses Gerät nötig.
+          </p>
+          <form method="post">
+            <button type="submit" class="btn btn-primary w-100">Verbindung starten</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
