@@ -37,6 +37,9 @@ def create_app(config_class=Config) -> Flask:
 
     with app.app_context():
         db.create_all()
+        from app.db_migrate import sync_schema
+
+        sync_schema(db)
 
     @app.context_processor
     def inject_admin_hint():
