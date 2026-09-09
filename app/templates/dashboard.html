@@ -56,23 +56,11 @@
               </button>
             </form>
           </div>
-          <p class="small text-muted">
+          <p class="small text-muted mb-0">
             Zielverzeichnis: <code>{{ account.settings.directory }}</code> ·
-            <a href="{{ url_for('settings.edit') }}">Einstellungen anpassen</a>
+            <a href="{{ url_for('settings.edit') }}">Einstellungen anpassen</a> ·
+            <a href="{{ url_for('jobs.live') }}">Live-Log ansehen</a>
           </p>
-
-          <div id="job-progress-wrap" class="mb-3" hidden>
-            <div class="d-flex justify-content-between small text-muted mb-1">
-              <span id="job-progress-text">–</span>
-              <span id="job-progress-eta">–</span>
-            </div>
-            <div class="progress" role="progressbar" style="height: 8px;">
-              <div id="job-progress-bar" class="progress-bar" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <h6 class="mt-4">Live-Log</h6>
-          <pre id="job-log" class="log-box">wird geladen...</pre>
         {% endif %}
       </div>
     </div>

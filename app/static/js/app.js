@@ -1,7 +1,7 @@
 (function () {
   const badge = document.getElementById("job-status-badge");
   const logBox = document.getElementById("job-log");
-  if (!badge || !logBox) return;
+  if (!badge) return;
 
   const progressWrap = document.getElementById("job-progress-wrap");
   const progressText = document.getElementById("job-progress-text");
@@ -50,7 +50,7 @@
       badge.textContent = label;
       badge.className = "badge " + (data.running ? statusColors.running : (statusColors[data.status] || "bg-secondary"));
 
-      if (data.log) {
+      if (logBox && data.log) {
         const wasAtBottom = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 20;
         logBox.textContent = data.log;
         if (wasAtBottom) {

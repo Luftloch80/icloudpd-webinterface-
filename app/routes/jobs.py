@@ -16,6 +16,14 @@ def _require_account():
     return account
 
 
+@bp.route("/live")
+@login_required
+def live():
+    account = Account.query.first()
+    running = icloudpd_runner.is_running(account.id) if account else None
+    return render_template("live_log.html", account=account, running=running)
+
+
 @bp.route("/start/<mode>", methods=["POST"])
 @login_required
 def start(mode):
