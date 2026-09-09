@@ -8,7 +8,21 @@
       <h5 class="card-title">Download</h5>
       <div class="mb-3">
         <label class="form-label">Zielverzeichnis</label>
-        <input type="text" class="form-control" name="directory" value="{{ settings.directory }}" required>
+        <div class="input-group">
+          <input type="text" class="form-control" id="directory" name="directory"
+                 value="{{ settings.directory }}" required>
+          <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
+                  data-bs-target="#folderBrowserModal">
+            Durchsuchen…
+          </button>
+        </div>
+        <div class="form-text">
+          Nur der unter <code>/data</code> gemountete Bereich ist wählbar (siehe
+          <code>volumes:</code> in der <code>docker-compose.yml</code>) – das ist der einzige
+          Ordner, der wirklich mit einem Ordner auf deinem Windows-Rechner verbunden ist. Ein
+          frei eingetippter Windows-Pfad wie <code>d:\Alex</code> existiert im Container nicht
+          und führt zu einem falschen Ergebnis.
+        </div>
       </div>
       <div class="mb-3">
         <label class="form-label d-block">Bildgrößen</label>
@@ -152,4 +166,36 @@
 
   <button type="submit" class="btn btn-primary">Speichern</button>
 </form>
+
+<div class="modal fade" id="folderBrowserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ordner auswählen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-2">Aktueller Pfad im Container:</p>
+        <code id="fb-current-path" class="d-block mb-3">/data</code>
+
+        <div id="fb-error" class="alert alert-danger d-none"></div>
+
+        <ul class="list-group mb-3" id="fb-list"></ul>
+
+        <div class="input-group">
+          <input type="text" class="form-control" id="fb-new-folder-name" placeholder="Neuer Ordnername">
+          <button type="button" class="btn btn-outline-secondary" id="fb-create-folder">+ Anlegen</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-primary" id="fb-select-current">Diesen Ordner auswählen</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/folder_browser.js') }}"></script>
 {% endblock %}

@@ -1,10 +1,18 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from pathlib import Path
+
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 
+from app.config import Config
 from app.extensions import db
 from app.models import Account, Settings
 
 bp = Blueprint("settings", __name__, url_prefix="/settings")
+
+# Only the persistent /data mount can be safely offered to the browser-based
+# folder picker: it's the only location guaranteed to survive container
+# restarts and (via docker-compose volumes) map to something on the host.
+BROWSE_ROOT = Config.DATA_DIR
 
 LIVE_PHOTO_SIZES = ["original", "medium", "thumb"]
 FILE_MATCH_POLICIES = ["name-size-dedup-with-suffix", "name-id7"]
@@ -19,6 +27,75 @@ def _int_or_none(value: str):
         return int(value)
     except ValueError:
         return None
+
+
+def _safe_resolve(relative_path: str) -> Path:
+    """Resolves a client-supplied path as relative to BROWSE_ROOT and
+    guarantees the result cannot escape it (no `..`, no symlink escape)."""
+    Config.ensure_dirs()
+    root = BROWSE_ROOT.resolve()
+    relative_path = (relative_path or "").strip().lstrip("/\\")
+    candidate = (root / relative_path).resolve() if relative_path else root
+    if candidate != root and root not in candidate.parents:
+        raise ValueError("Pfad außerhalb des erlaubten Bereichs.")
+    return candidate
+
+
+@bp.route("/browse")
+@login_required
+def browse():
+    try:
+        current = _safe_resolve(request.args.get("path", ""))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    if not current.exists():
+        current = BROWSE_ROOT.resolve()
+
+    try:
+        entries = sorted(
+            (p.name for p in current.iterdir() if p.is_dir() and not p.name.startswith(".")),
+            key=str.lower,
+        )
+    except OSError as exc:
+        return jsonify({"error": f"Verzeichnis konnte nicht gelesen werden: {exc}"}), 400
+
+    root = BROWSE_ROOT.resolve()
+    rel = current.relative_to(root)
+    parent_rel = None if current == root else str(rel.parent).replace("\\", "/")
+    if parent_rel == ".":
+        parent_rel = ""
+
+    return jsonify(
+        {
+            "path": str(rel).replace("\\", "/") if str(rel) != "." else "",
+            "absolute_path": str(current),
+            "parent": parent_rel,
+            "folders": entries,
+        }
+    )
+
+
+@bp.route("/browse/mkdir", methods=["POST"])
+@login_required
+def browse_mkdir():
+    data = request.get_json(silent=True) or {}
+    try:
+        parent = _safe_resolve(data.get("path", ""))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    name = (data.get("name") or "").strip()
+    if not name or "/" in name or "\\" in name or name in (".", ".."):
+        return jsonify({"error": "Ungültiger Ordnername."}), 400
+
+    new_dir = parent / name
+    try:
+        new_dir.mkdir(exist_ok=True)
+    except OSError as exc:
+        return jsonify({"error": f"Ordner konnte nicht angelegt werden: {exc}"}), 400
+
+    return jsonify({"ok": True})
 
 
 @bp.route("/", methods=["GET", "POST"])
